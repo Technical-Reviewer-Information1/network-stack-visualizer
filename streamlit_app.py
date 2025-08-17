@@ -25,13 +25,21 @@ if 'current_step' not in st.session_state:
     st.session_state.current_step = 0
 if 'packet_data' not in st.session_state:
     st.session_state.packet_data = {}
+if 'selected_header' not in st.session_state:
+    st.session_state.selected_header = None
+if 'animation_speed' not in st.session_state:
+    st.session_state.animation_speed = 1.0
+if 'show_details' not in st.session_state:
+    st.session_state.show_details = False
+if 'packet_size' not in st.session_state:
+    st.session_state.packet_size = 0
 
 # TCP/IP階層モデルの定義
 LAYERS = {
-    'application': {'name': 'アプリケーション層', 'color': '#FF6B6B', 'example': 'HTTP'},
-    'transport': {'name': 'トランスポート層', 'color': '#4ECDC4', 'example': 'TCP/UDP'},
-    'internet': {'name': 'インターネット層', 'color': '#45B7D1', 'example': 'IP'},
-    'network_interface': {'name': 'ネットワークインターフェース層', 'color': '#96CEB4', 'example': 'Ethernet'}
+    'application': {'name': 'アプリケーション層', 'color': '#FF6B6B', 'example': 'HTTP', 'short_name': 'アプリ層'},
+    'transport': {'name': 'トランスポート層', 'color': '#4ECDC4', 'example': 'TCP/UDP', 'short_name': 'トランスポート層'},
+    'internet': {'name': 'インターネット層', 'color': '#45B7D1', 'example': 'IP', 'short_name': 'インターネット層'},
+    'network_interface': {'name': 'ネットワークインターフェース層', 'color': '#96CEB4', 'example': 'Ethernet', 'short_name': 'NW I/F層'}
 }
 
 # ヘッダ情報の定義
@@ -87,7 +95,36 @@ def add_log(message: str):
     timestamp = time.strftime("%H:%M:%S")
     st.session_state.communication_logs.append(f"[{timestamp}] {message}")
 
-def create_layer_visualization(side: str, data_position: str = None, headers: List[str] = None) -> go.Figure:
+def calculate_packet_size(protocol: str, message: str) -> Dict[str, int]:
+    """パケットサイズを計算する"""
+    data_size = len(message.encode('utf-8'))
+    
+    sizes = {
+        'data': data_size,
+        'tcp': 20 if protocol == 'TCP' else 0,
+        'udp': 8 if protocol == 'UDP' else 0,
+        'ip': 20,
+        'ethernet': 18  # 14 + 4 (FCS)
+    }
+    
+    total_size = data_size
+    if protocol == 'TCP':
+        total_size += sizes['tcp']
+    else:
+        total_size += sizes['udp']
+    total_size += sizes['ip'] + sizes['ethernet']
+    
+    sizes['total'] = total_size
+    return sizes
+
+def get_protocol_efficiency(protocol: str, message: str) -> float:
+    """プロトコル効率を計算する"""
+    sizes = calculate_packet_size(protocol, message)
+    data_size = sizes['data']
+    total_size = sizes['total']
+    return (data_size / total_size) * 100 if total_size > 0 else 0
+
+def create_layer_visualization(side: str, data_position: str = None, headers: List[str] = None, highlight_layer: str = None) -> go.Figure:
     """階層モデルの可視化を作成"""
     fig = go.Figure()
     
@@ -98,21 +135,24 @@ def create_layer_visualization(side: str, data_position: str = None, headers: Li
     for i, (layer_key, y) in enumerate(zip(layer_keys, y_positions)):
         layer = LAYERS[layer_key]
         
-        # 階層ボックス
+        # 階層ボックス（ハイライト効果付き）
+        opacity = 0.7 if highlight_layer == layer_key else 0.3
+        line_width = 4 if highlight_layer == layer_key else 2
+        
         fig.add_shape(
             type="rect",
             x0=0, y0=y, x1=2, y1=y+0.8,
             fillcolor=layer['color'],
-            opacity=0.3,
-            line=dict(color=layer['color'], width=2)
+            opacity=opacity,
+            line=dict(color=layer['color'], width=line_width)
         )
         
-        # 階層名とプロトコル例
+        # 階層名とプロトコル例（短縮名を使用）
         fig.add_annotation(
             x=1, y=y+0.4,
-            text=f"{layer['name']}<br>({layer['example']})",
+            text=f"{layer['short_name']}<br>({layer['example']})",
             showarrow=False,
-            font=dict(size=12, color="black"),
+            font=dict(size=11, color="black"),
             align="center"
         )
     
@@ -135,16 +175,20 @@ def create_layer_visualization(side: str, data_position: str = None, headers: Li
             font=dict(size=10)
         )
         
-        # ヘッダーブロック
+        # ヘッダーブロック（クリック可能な効果付き）
         for i, header in enumerate(headers):
             header_info = HEADER_INFO.get(header)
             if header_info:
+                # 選択されたヘッダーをハイライト
+                border_color = "red" if st.session_state.selected_header == header else "black"
+                border_width = 3 if st.session_state.selected_header == header else 1
+                
                 fig.add_shape(
                     type="rect",
                     x0=1.5-i*0.3, y0=y+0.1, x1=2.1-i*0.3, y1=y+0.7,
                     fillcolor=header_info['color'],
-                    opacity=0.7,
-                    line=dict(color="black", width=1)
+                    opacity=0.8,
+                    line=dict(color=border_color, width=border_width)
                 )
                 fig.add_annotation(
                     x=1.8-i*0.3, y=y+0.4,
@@ -229,8 +273,10 @@ def create_network_animation() -> go.Figure:
 
 def simulate_encapsulation(protocol: str, message: str):
     """カプセル化プロセスのシミュレーション"""
+    delay = 1.0 / st.session_state.animation_speed
+    
     add_log(f"[アプリケーション層] データ '{message}' を生成しました。")
-    time.sleep(1)
+    time.sleep(delay)
     
     if protocol == "TCP":
         add_log("[トランスポート層] TCPヘッダを付与し、セグメントを生成しました。")
@@ -239,32 +285,34 @@ def simulate_encapsulation(protocol: str, message: str):
         add_log("[トランスポート層] UDPヘッダを付与し、セグメントを生成しました。")
         headers = ['udp']
     
-    time.sleep(1)
+    time.sleep(delay)
     add_log("[インターネット層] IPヘッダを付与し、パケットを生成しました。")
     headers.append('ip')
     
-    time.sleep(1)
+    time.sleep(delay)
     add_log("[ネットワークインターフェース層] Ethernetヘッダを付与し、フレームを生成しました。")
     headers.append('ethernet')
     
-    time.sleep(1)
+    time.sleep(delay)
     add_log("[通信中] Client > Server : フレームを送信中です...")
     
     return headers
 
 def simulate_decapsulation(headers: List[str]):
     """非カプセル化プロセスのシミュレーション"""
+    delay = 1.0 / st.session_state.animation_speed
+    
     add_log("[ネットワークインターフェース層] サーバがフレームを受信。Ethernetヘッダを分離します。")
-    time.sleep(1)
+    time.sleep(delay)
     
     add_log("[インターネット層] IPヘッダを分離します。")
-    time.sleep(1)
+    time.sleep(delay)
     
     if 'tcp' in headers:
         add_log("[トランスポート層] TCPヘッダを分離します。")
     else:
         add_log("[トランスポート層] UDPヘッダを分離します。")
-    time.sleep(1)
+    time.sleep(delay)
     
     add_log("[アプリケーション層] 元のデータが復元されました。")
 
@@ -292,7 +340,30 @@ with col3:
         }
 
 with col4:
-    trouble_rate = st.slider("トラブル発生率", 0, 100, 10, help="パケットロスやエラーの発生確率")
+    animation_speed = st.slider("アニメーション速度", 0.5, 3.0, 1.0, 0.5, help="アニメーションの再生速度")
+    st.session_state.animation_speed = animation_speed
+
+# リアルタイムメトリクス表示
+if message:
+    sizes = calculate_packet_size(protocol, message)
+    efficiency = get_protocol_efficiency(protocol, message)
+    
+    metrics_col1, metrics_col2, metrics_col3, metrics_col4 = st.columns(4)
+    
+    with metrics_col1:
+        st.metric("データサイズ", f"{sizes['data']} bytes", help="実際のメッセージのサイズ")
+    
+    with metrics_col2:
+        header_size = sizes['tcp'] + sizes['udp'] + sizes['ip'] + sizes['ethernet']
+        st.metric("ヘッダサイズ", f"{header_size} bytes", help="プロトコルヘッダの合計サイズ")
+    
+    with metrics_col3:
+        st.metric("総パケットサイズ", f"{sizes['total']} bytes", help="送信される全体のサイズ")
+    
+    with metrics_col4:
+        st.metric("効率", f"{efficiency:.1f}%", 
+                 delta=f"{efficiency - 50:.1f}%" if efficiency != 50 else None,
+                 help="データサイズ / 総サイズの割合")
 
 # プロトコル説明
 st.markdown("### 🔍 プロトコルの特徴")
@@ -373,48 +444,59 @@ if st.session_state.animation_state == 'running':
         if st.session_state.current_step >= 10:
             st.session_state.animation_state = 'receiving'
             st.session_state.current_step = 5
-        time.sleep(0.5)
+        time.sleep(0.5 / st.session_state.animation_speed)
         st.rerun()
     elif st.session_state.animation_state == 'receiving':
         if st.session_state.current_step == 5:
             simulate_decapsulation(st.session_state.packet_data['headers'])
             st.session_state.current_step = 9
             st.session_state.animation_state = 'completed'
-        time.sleep(1)
+        time.sleep(1.0 / st.session_state.animation_speed)
         st.rerun()
     elif st.session_state.animation_state == 'completed':
         st.session_state.animation_state = 'stopped'
         st.success("✅ 通信が完了しました！")
         st.rerun()
 
-# ヘッダ情報表示
+# インタラクティブなヘッダ情報表示
 st.markdown("### 📋 プロトコルヘッダ情報")
 
-header_tabs = st.tabs(["TCP", "UDP", "IP", "Ethernet"])
+header_col1, header_col2 = st.columns([1, 2])
 
-with header_tabs[0]:
-    st.markdown("#### TCPヘッダの構造")
-    tcp_info = HEADER_INFO['tcp']
-    for field, value in tcp_info['fields'].items():
-        st.markdown(f"- **{field}**: `{value}`")
+with header_col1:
+    st.markdown("#### ヘッダを選択:")
+    if st.button("🔵 TCPヘッダ", key="tcp_btn"):
+        st.session_state.selected_header = 'tcp'
+    if st.button("🔵 UDPヘッダ", key="udp_btn"):
+        st.session_state.selected_header = 'udp'
+    if st.button("🟢 IPヘッダ", key="ip_btn"):
+        st.session_state.selected_header = 'ip'
+    if st.button("🟤 Ethernetヘッダ", key="eth_btn"):
+        st.session_state.selected_header = 'ethernet'
+    
+    if st.button("🔄 選択解除"):
+        st.session_state.selected_header = None
 
-with header_tabs[1]:
-    st.markdown("#### UDPヘッダの構造")
-    udp_info = HEADER_INFO['udp']
-    for field, value in udp_info['fields'].items():
-        st.markdown(f"- **{field}**: `{value}`")
-
-with header_tabs[2]:
-    st.markdown("#### IPヘッダの構造")
-    ip_info = HEADER_INFO['ip']
-    for field, value in ip_info['fields'].items():
-        st.markdown(f"- **{field}**: `{value}`")
-
-with header_tabs[3]:
-    st.markdown("#### Ethernetヘッダの構造")
-    eth_info = HEADER_INFO['ethernet']
-    for field, value in eth_info['fields'].items():
-        st.markdown(f"- **{field}**: `{value}`")
+with header_col2:
+    if st.session_state.selected_header:
+        selected_info = HEADER_INFO[st.session_state.selected_header]
+        st.markdown(f"#### {selected_info['name']}の詳細構造")
+        
+        # ヘッダサイズ情報を追加
+        if st.session_state.selected_header == 'tcp':
+            st.info("**サイズ**: 20-60 bytes (オプション含む)")
+        elif st.session_state.selected_header == 'udp':
+            st.info("**サイズ**: 8 bytes (固定)")
+        elif st.session_state.selected_header == 'ip':
+            st.info("**サイズ**: 20-60 bytes (オプション含む)")
+        elif st.session_state.selected_header == 'ethernet':
+            st.info("**サイズ**: 18 bytes (ヘッダ14 + FCS4)")
+        
+        for field, value in selected_info['fields'].items():
+            st.markdown(f"- **{field}**: `{value}`")
+    else:
+        st.markdown("#### ヘッダを選択すると詳細が表示されます")
+        st.markdown("左のボタンから確認したいヘッダを選択してください。")
 
 # ログ表示エリア
 with st.expander("▼ 通信ログを見る", expanded=True):
@@ -432,20 +514,103 @@ if st.button("🔄 リセット"):
     st.session_state.packet_data = {}
     st.rerun()
 
-# フッター情報
+# プロトコル比較学習
 st.markdown("---")
-st.markdown("""
-### 📖 学習のポイント
+st.markdown("### 🔬 プロトコル比較学習")
 
-**カプセル化 (Encapsulation)**
-- データが送信側で各階層を下向きに通過する際、各層で専用のヘッダが付与される
-- アプリケーション → トランスポート → インターネット → ネットワークインターフェース
+compare_col1, compare_col2 = st.columns(2)
 
-**非カプセル化 (Decapsulation)**
-- データが受信側で各階層を上向きに通過する際、各層でヘッダが取り除かれる
-- ネットワークインターフェース → インターネット → トランスポート → アプリケーション
+with compare_col1:
+    st.markdown("#### TCP vs UDP 効率比較")
+    if message:
+        tcp_sizes = calculate_packet_size('TCP', message)
+        udp_sizes = calculate_packet_size('UDP', message)
+        tcp_efficiency = get_protocol_efficiency('TCP', message)
+        udp_efficiency = get_protocol_efficiency('UDP', message)
+        
+        comparison_data = pd.DataFrame({
+            'プロトコル': ['TCP', 'UDP'],
+            'ヘッダサイズ (bytes)': [tcp_sizes['tcp'] + tcp_sizes['ip'] + tcp_sizes['ethernet'], 
+                                   udp_sizes['udp'] + udp_sizes['ip'] + udp_sizes['ethernet']],
+            '総サイズ (bytes)': [tcp_sizes['total'], udp_sizes['total']],
+            '効率 (%)': [tcp_efficiency, udp_efficiency]
+        })
+        
+        st.dataframe(comparison_data, use_container_width=True)
+        
+        # 効率比較グラフ
+        fig_comparison = px.bar(comparison_data, x='プロトコル', y='効率 (%)', 
+                               title='プロトコル効率比較',
+                               color='プロトコル',
+                               color_discrete_map={'TCP': '#4ECDC4', 'UDP': '#FF6B6B'})
+        st.plotly_chart(fig_comparison, use_container_width=True)
 
-**TCP vs UDP**
-- TCP: 信頼性重視（ファイル転送、Webブラウジング）
-- UDP: 速度重視（動画配信、オンラインゲーム）
-""")
+with compare_col2:
+    st.markdown("#### メッセージ長による効率変化")
+    
+    test_messages = ["Hi", "Hello World!", "これは長いメッセージの例です。ネットワークプロトコルの効率を測定します。"]
+    efficiency_data = []
+    
+    for msg in test_messages:
+        tcp_eff = get_protocol_efficiency('TCP', msg)
+        udp_eff = get_protocol_efficiency('UDP', msg)
+        efficiency_data.append({
+            'メッセージ長': len(msg),
+            'TCP効率': tcp_eff,
+            'UDP効率': udp_eff
+        })
+    
+    efficiency_df = pd.DataFrame(efficiency_data)
+    
+    fig_efficiency = go.Figure()
+    fig_efficiency.add_trace(go.Scatter(
+        x=efficiency_df['メッセージ長'],
+        y=efficiency_df['TCP効率'],
+        mode='lines+markers',
+        name='TCP',
+        line=dict(color='#4ECDC4', width=3)
+    ))
+    fig_efficiency.add_trace(go.Scatter(
+        x=efficiency_df['メッセージ長'],
+        y=efficiency_df['UDP効率'],
+        mode='lines+markers',
+        name='UDP',
+        line=dict(color='#FF6B6B', width=3)
+    ))
+    
+    fig_efficiency.update_layout(
+        title='メッセージ長と効率の関係',
+        xaxis_title='メッセージ長 (文字)',
+        yaxis_title='効率 (%)',
+        height=300
+    )
+    
+    st.plotly_chart(fig_efficiency, use_container_width=True)
+
+# 学習のポイント
+st.markdown("### 📖 学習のポイント")
+
+point_col1, point_col2 = st.columns(2)
+
+with point_col1:
+    st.markdown("""
+    **カプセル化 (Encapsulation)**
+    - データが送信側で各階層を下向きに通過する際、各層で専用のヘッダが付与される
+    - アプリケーション → トランスポート → インターネット → ネットワークインターフェース
+    
+    **非カプセル化 (Decapsulation)**
+    - データが受信側で各階層を上向きに通過する際、各層でヘッダが取り除かれる
+    - ネットワークインターフェース → インターネット → トランスポート → アプリケーション
+    """)
+
+with point_col2:
+    st.markdown("""
+    **TCP vs UDP の使い分け**
+    - **TCP**: 信頼性重視（Webブラウジング、ファイル転送、メール）
+    - **UDP**: 速度重視（動画配信、オンラインゲーム、DNS）
+    
+    **効率に関する重要なポイント**
+    - 短いメッセージではヘッダのオーバーヘッドが大きい
+    - 長いメッセージでは効率が向上する
+    - アプリケーションの要件に応じて適切なプロトコルを選択
+    """)
