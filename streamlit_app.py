@@ -7,12 +7,12 @@ import random
 from typing import Dict, List, Tuple
 
 st.set_page_config(
-    page_title="ネットワークプロトコル可視化学習アプリ",
+    page_title="通信プロトコル",
     page_icon="🌐",
     layout="wide"
 )
 
-st.title("🌐 インターネットの仕組みを見てみよう！")
+st.title("通信プロトコル（pp.115-116）")
 st.caption("Created by Dit-Lab.(Daiki ITO)")
 st.caption("Supported by Tomoaki ATSUMI")
 
