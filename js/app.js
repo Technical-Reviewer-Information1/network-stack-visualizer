@@ -240,6 +240,12 @@
     $('qScore').textContent = qScore; $('qNext').disabled = false;
   }
 
+  /* 本文の問題 */
+  function drawBook() {
+    if (!document.getElementById('bookBox')) return;
+    window.Quiz.choice('bookBox', 'bookNote', [{"k": "ア", "q": "トランスポート層の主な役割は。", "ch": ["ネットワークを利用するアプリケーション間でやり取りする", "送信先のIPアドレスをもとに、最適な通信経路を決定しデータを転送する", "物理的な通信手段を用いてデータを送受信する", "通信の信頼性を確保し、データの送受信を制御する"], "a": 3, "why": "届いたか確認して再送するなど、<strong>信頼性</strong>を担当するのがトランスポート層です。"}, {"k": "イ", "q": "インターネット層の主な役割は。", "ch": ["ネットワークを利用するアプリケーション間でやり取りする", "送信先のIPアドレスをもとに、最適な通信経路を決定しデータを転送する", "物理的な通信手段を用いてデータを送受信する", "通信の信頼性を確保し、データの送受信を制御する"], "a": 1, "why": "IPアドレスを見て<strong>経路を決める</strong>のがインターネット層です。"}, {"k": "ウ・エ", "q": "通信プロトコルに関する記述として適当なもの（2つのうちの1つ）。", "ch": ["TCPとUDPは、データをパケットと呼ばれる小さな単位に分割して管理する", "UDPとは、信頼性の高い通信を実現するために、データの完全性や順序性を保証するプロトコルである", "TCPとは、通信の途中でデータが欠損していても再送は行わず、遅延を最小限に抑えることができるプロトコルである", "IPとは、パケットを正しい送り先に届けるためにIPアドレスを付与するプロトコルである"], "a": "0|3", "why": "①と②は<strong>TCPとUDPの説明が入れかわって</strong>います。再送するのがTCP、再送しないで速さを優先するのがUDPです。"}, {"k": "オ", "q": "プロトコルが4つの階層に分かれていることのメリットは。", "ch": ["ある階層のプロトコルを変更しても、ほかの階層に影響を与えず、新しい技術の導入を進めやすくなる", "すべての階層が同じプロトコルを使用することで、互換性が向上する", "上位層のプロトコルを変更すると、下位層のプロトコルも必ず変更しなければならない", "階層構造にすることで、通信速度が向上する"], "a": 0, "why": "役割を分けておけば、たとえば無線から有線に変えても上の層はそのまま使えます。これが階層化の最大の利点です。"}], "本文の答えは【ア】③　【イ】①　【ウ】・【エ】⓪・③（順不同）　【オ】⓪ です。");
+  }
+
   function init() {
     $('layReset').addEventListener('click', () => { placed = {}; sel = null; $('layFb').hidden = true; drawLayers(); });
     $('layShow').addEventListener('click', () => {
@@ -267,6 +273,7 @@
     $('qReset').addEventListener('click', startQuiz);
     window.Terms.glossary($('glossBox'), ['プロトコル', 'TCP/IP', 'TCP', 'UDP', 'IP', 'パケット', 'IPアドレス', 'HTTP']);
     drawLayers(); drawCap(); startQuiz();
+    drawBook();
     window.Terms.attach();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
