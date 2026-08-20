@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>通信プロトコル｜情報Ⅰ共通テスト対策問題集</title>
+<meta name="description" content="データは階層を下りながら「封筒」に包まれ、受け取る側で1枚ずつはがされます。包む・はがすを自分で動かして確かめましょう。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 fill=%22%2315181c%22/%3E%3Ctext x=%2216%22 y=%2222%22 font-size=%2218%22 font-family=%22monospace%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E01%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="inner">
+    <span class="eyebrow">第 4 章　情報通信ネットワーク　4-6</span>
+    <h1>通信プロトコル（pp.115-116）</h1>
+    <p class="lead">データは階層を下りながら「封筒」に包まれ、受け取る側で1枚ずつはがされます。包む・はがすを自分で動かして確かめましょう。</p>
+    <p class="credit">Created by Dit-Lab.(Daiki ITO)　/　Supported by Tomoaki ATSUMI</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="step" id="step1">
+    <h2><span class="no">STEP 1</span>4つの階層の役割をあてはめる</h2>
+    <p class="desc"><span class="term" data-t="TCP/IP">TCP/IP</span>は4つの層に分かれています。役割のカードを選び、あてはまる層に入れてください。</p>
+
+    <div class="panel">
+      <div class="roles" id="roles"></div>
+      <div class="layers" id="layers"></div>
+      <div class="note" id="layFb" hidden style="margin-top:12px"></div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn ghost" id="layReset">最初から</button>
+        <button class="btn" id="layShow">答えを表示</button>
+        <span class="badge" id="layScore">0 / 4</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="step" id="step2">
+    <h2><span class="no">STEP 2</span>データが包まれていくようす</h2>
+    <p class="desc">送る側では上の層から下の層へ、<strong>1層ごとにヘッダ（あて名の紙）が付いて</strong>いきます。受け取る側では逆に1枚ずつはがします。</p>
+
+    <div class="panel">
+      <div class="btn-row" style="margin-bottom:12px">
+        <button class="btn primary" id="capNext">次の段階へ ▶</button>
+        <button class="btn" id="capAuto">自動で動かす</button>
+        <button class="btn ghost" id="capReset">最初から</button>
+        <span class="badge" id="capStage"></span>
+      </div>
+      <div id="capBox"></div>
+      <div class="note" id="capNote" style="margin-top:12px"></div>
+      <p class="why" style="margin-top:10px">
+        このように包んでいくことを<strong>カプセル化</strong>といいます。それぞれのヘッダには、その層が必要とする情報
+        （ポート番号・IPアドレス・MACアドレスなど）が入っています。
+      </p>
+    </div>
+  </section>
+
+  <section class="step" id="step3">
+    <h2><span class="no">STEP 3</span>TCP と UDP を比べる</h2>
+    <p class="desc">同じトランスポート層でも、性質がまったくちがいます。<strong>途中でデータが失われたとき</strong>の動きを見てください。</p>
+    <div class="panel">
+      <div class="grid c2">
+        <div>
+          <label class="fld" for="loss">通信の途中でデータが失われる割合：<span class="mono" id="lossV">20</span> ％</label>
+          <input type="range" id="loss" min="0" max="50" step="5" value="20">
+          <div class="btn-row" style="margin-top:12px">
+            <button class="btn primary" id="runTcp">TCPで10個送る</button>
+            <button class="btn" id="runUdp">UDPで10個送る</button>
+          </div>
+          <div class="note" id="tuNote" style="margin-top:14px">ボタンを押してください。</div>
+        </div>
+        <div>
+          <div class="tbl-scroll"><table class="tbl" id="tuTable"></table></div>
+        </div>
+      </div>
+      <div class="grid c2" style="margin-top:16px">
+        <div class="panel"><h3><span class="term" data-t="TCP">TCP</span></h3>
+          <ul style="margin:0;padding-left:1.1em;font-size:.87rem;line-height:1.95;color:var(--ink-2)">
+            <li>届かなければ<strong>再送する</strong>。順序も正しく並べ直す。</li>
+            <li>確実に届くが、そのぶん<strong>時間がかかる</strong>。</li>
+            <li>向いている例：Webページ、メール、ファイル転送</li>
+          </ul>
+        </div>
+        <div class="panel"><h3><span class="term" data-t="UDP">UDP</span></h3>
+          <ul style="margin:0;padding-left:1.1em;font-size:.87rem;line-height:1.95;color:var(--ink-2)">
+            <li>再送しない。<strong>欠けたまま先に進む</strong>。</li>
+            <li>そのぶん<strong>遅れが小さい</strong>。</li>
+            <li>向いている例：動画・音声のリアルタイム配信、オンライン通話</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="step" id="step4">
+    <h2><span class="no">STEP 4</span>確認クイズ</h2>
+    <div class="panel">
+      <div class="qhead">
+        <span class="badge" id="qProgress">1 / 1</span>
+        <span class="badge">正解 <span class="score" id="qScore">0</span></span>
+      </div>
+      <div class="card-q"><div class="q-scene" id="qText"></div></div>
+      <div class="choice4" id="qChoices"></div>
+      <div class="note" id="qFb" hidden style="margin-top:12px"></div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn primary" id="qNext" disabled>次の問題</button>
+        <button class="btn ghost" id="qReset">最初から</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="step" id="glossary">
+    <h2><span class="no">用語</span>この節で出てくることば</h2>
+    <div id="glossBox"></div>
+  </section>
+
+  <section class="step">
+    <h2><span class="no">まとめ</span>通信プロトコルのポイント</h2>
+    <ul style="margin:0;padding-left:1.2em;color:var(--ink-2);font-size:.92rem;line-height:2.05">
+      <li>TCP/IPは<strong>4層</strong>：アプリケーション層・トランスポート層・インターネット層・ネットワークインタフェース層。</li>
+      <li>トランスポート層＝<strong>信頼性の確保</strong>（TCP・UDP）。インターネット層＝<strong>宛先までの経路の決定</strong>（IP）。</li>
+      <li>TCPもUDPも、データを<strong>パケットに分割</strong>して扱う。</li>
+      <li>TCPは再送あり（信頼性重視）、UDPは再送なし（速さ重視）。<strong>説明を入れかえた選択肢に注意。</strong></li>
+      <li>階層に分ける利点は、<strong>ある層を変えても他の層に影響しない</strong>こと。新しい技術を取り入れやすくなる。</li>
+    </ul>
+  </section>
+
+  <section class="step">
+    <h2><span class="no">活用</span>授業・探究での使い方</h2>
+    <div class="use-note">
+      <h3>授業で</h3>
+      <ul>
+        <li>STEP 2 のカプセル化アニメーションを投影し、ヘッダが1層ずつ付く/外れるのを見せる。</li>
+        <li>STEP 1 の階層カード当てはめは、表を埋める作業と同じ形式で使える。</li>
+        <li>STEP 4 の TCP と UDP の比較は、動画配信とファイル転送の例と結びつけて説明する。</li>
+      </ul>
+      <h3 style="margin-top:12px">探究で</h3>
+      <ul>
+        <li>自分が使っているアプリが、TCPとUDPのどちらに向いているかを考えて分類する。</li>
+        <li>階層に分けることの利点を、学校の係活動などの身近な分業にたとえて説明する。</li>
+        <li>新しい通信技術が登場したとき、どの層を差しかえればよいかを考える。</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer class="app-footer">
+  情報Ⅰ 共通テスト対策問題集（技術評論社）連動Webアプリ　/　Created by Dit-Lab.(Daiki ITO)　/　Supported by Tomoaki ATSUMI
+</footer>
+
+<script src="js/tools.js"></script>
+<script src="js/chart.js"></script>
+<script src="js/terms.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

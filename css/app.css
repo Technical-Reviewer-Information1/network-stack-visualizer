@@ -1,0 +1,42 @@
+.qhead{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px}
+.card-q{border:1px solid var(--rule); background:var(--paper); padding:18px; margin-bottom:14px}
+.q-scene{font-size:1rem; font-weight:700; line-height:1.9}
+.choice4{display:grid; gap:8px; grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.choice4 .btn{text-align:left; line-height:1.65; padding:11px 13px}
+.choice4 .btn.correct{background:var(--ok-bg); border-color:var(--ok); color:var(--ok)}
+.choice4 .btn.wrong{background:var(--ng-bg); border-color:var(--ng); color:var(--ng)}
+.choice4.locked{pointer-events:none}
+.sel{width:100%; font-family:inherit; font-size:.95rem; padding:9px 11px; min-height:42px;
+  border:1px solid var(--ink-3); border-radius:2px; background:var(--paper); color:var(--ink)}
+input[type=range]{width:100%; accent-color:var(--accent); height:34px}
+.why{font-size:.85rem; color:var(--ink-2); line-height:1.85}
+.eqbox{font-family:var(--mono); font-size:1.02rem; font-weight:700; text-align:center; padding:14px;
+  border:1px solid var(--rule); background:var(--paper-2); line-height:1.8}
+.blankin{border:1.5px solid var(--accent); background:#fff; padding:6px 8px; text-align:center;
+  font-family:var(--mono); min-height:38px; font-size:.95rem; max-width:120px}
+.blankin.ok{border-color:var(--ok); background:var(--ok-bg)}
+.blankin.ng{border-color:var(--ng); background:var(--ng-bg)}
+table.tbl td .blankin{width:100%; max-width:none}
+.layers{display:flex; flex-direction:column; gap:6px}
+.layer{border:1px solid var(--rule); background:var(--paper); padding:12px 14px; display:grid;
+  grid-template-columns:76px 1fr; gap:12px; align-items:center; cursor:pointer}
+.layer .n{font-family:var(--mono); font-size:.8rem; color:var(--ink-3); font-weight:700}
+.layer .t{font-weight:700; font-size:.95rem}
+.layer .d{font-size:.82rem; color:var(--ink-2); margin-top:2px}
+.layer.sel{border:2px solid var(--accent); background:var(--accent-w)}
+.layer.hot{border-color:#8a5a00; background:var(--warn-bg)}
+.layer .proto{font-family:var(--mono); font-size:.76rem; color:var(--ink-3)}
+#capBox{border:1px solid var(--rule); background:var(--paper); overflow-x:auto}
+#capBox svg{display:block; margin:0 auto}
+svg .seg{stroke:#fff; stroke-width:1.5}
+svg .segl{font-size:10px; text-anchor:middle; fill:#fff; font-weight:700}
+svg .stage{font-size:11px; fill:#4a4f57}
+.dropzone{border:1px dashed var(--rule); background:var(--paper-2); min-height:44px; padding:8px;
+  display:flex; align-items:center; font-size:.86rem; color:var(--ink-3)}
+.dropzone.filled{border-style:solid; background:var(--paper); color:var(--ink)}
+.dropzone.ok{border-color:var(--ok); background:var(--ok-bg)}
+.dropzone.ng{border-color:var(--ng); background:var(--ng-bg)}
+.roles{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px}
+.roles .r{border:1px solid var(--ink-3); background:var(--paper); padding:9px 13px; font-size:.88rem; cursor:pointer; min-height:42px}
+.roles .r[aria-pressed="true"]{border:2px solid var(--accent); background:var(--accent-w); color:var(--accent); font-weight:700}
+.roles .r.used{opacity:.4; pointer-events:none}
