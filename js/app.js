@@ -79,9 +79,31 @@
     { t: '受信：アプリケーション層', segs: [['データ', '#123a6b']],
       d: '元のデータがアプリケーションに届きました。<strong>送る側と同じ形にもどっています。</strong>' }
   ];
+  const HDR = { 'TCPヘッダ': 20, 'IPヘッダ': 20, 'MACヘッダ': 14, 'FCS': 4 };
+  function msgBytes() {
+    const t = ($('msgIn') ? $('msgIn').value : 'こんにちは');
+    return { text: t, n: new TextEncoder().encode(t).length };
+  }
+  function drawSize() {
+    if (!$('szData')) return;
+    const m = msgBytes();
+    const head = HDR['TCPヘッダ'] + HDR['IPヘッダ'] + HDR['MACヘッダ'] + HDR['FCS'];
+    $('szData').textContent = m.n + ' バイト';
+    $('szHead').textContent = head + ' バイト';
+    $('szAll').textContent = (m.n + head) + ' バイト';
+    const n = $('szNote');
+    const ratio = m.n ? Math.round(head / (m.n + head) * 100) : 100;
+    n.className = 'note ' + (ratio >= 60 ? 'warn' : 'info');
+    n.innerHTML = 'UTF-8では日本語1文字が3バイト、半角英数字が1バイトです。' +
+      'この通信では、実際に流れるデータのうち <strong>' + ratio + '％がヘッダ</strong>です。' +
+      (ratio >= 60
+        ? '<br><strong>短いデータほど、ヘッダの割合が大きくなり効率が落ちます。</strong>まとめて送るほうが効率的なのはこのためです。'
+        : '<br>データが長くなるほど、ヘッダの割合は小さくなります。');
+  }
   let stage = 0, capTimer = null;
   function drawCap() {
     const s = STAGES[stage];
+    const mb = msgBytes();
     const W = 660, H = 150;
     const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', role: 'img', 'aria-label': 'カプセル化のようす' });
     const total = s.segs.reduce((a, x) => a + (x[0] === 'データ' ? 3 : 1), 0);
@@ -90,7 +112,12 @@
     s.segs.forEach(([label, col]) => {
       const w = unitW * (label === 'データ' ? 3 : 1);
       svg.appendChild(el('rect', { x, y: 52, width: w - 3, height: 46, fill: col, class: 'seg' }));
-      svg.appendChild(el('text', { x: x + w / 2 - 1.5, y: 78, class: 'segl' }, label));
+      const isData = label === 'データ';
+      const main = isData ? (mb.text.length > 10 ? mb.text.slice(0, 10) + '…' : (mb.text || 'データ')) : label;
+      svg.appendChild(el('text', { x: x + w / 2 - 1.5, y: isData ? 72 : 78, class: 'segl' }, main));
+      svg.appendChild(el('text', { x: x + w / 2 - 1.5, y: isData ? 88 : 0, class: 'segl', 'font-size': 10, opacity: isData ? .85 : 0 },
+        isData ? (mb.n + ' バイト') : ''));
+      if (!isData) svg.appendChild(el('text', { x: x + w / 2 - 1.5, y: 92, class: 'segl', 'font-size': 9.5, opacity: .8 }, (HDR[label] || 0) + 'B'));
       x += w;
     });
     svg.appendChild(el('text', { x: 30, y: 34, class: 'stage', 'font-weight': 700 }, s.t));
@@ -222,6 +249,11 @@
       drawLayers();
     });
     $('capNext').addEventListener('click', () => { stage = (stage + 1) % STAGES.length; drawCap(); });
+    if ($('msgIn')) $('msgIn').addEventListener('input', function () { drawSize(); drawCap(); });
+    document.querySelectorAll('[data-msg]').forEach(function (b) {
+      b.addEventListener('click', function () { $('msgIn').value = b.dataset.msg; drawSize(); drawCap(); });
+    });
+    drawSize();
     $('capReset').addEventListener('click', () => { stage = 0; drawCap(); });
     $('capAuto').addEventListener('click', () => {
       if (capTimer) { clearInterval(capTimer); capTimer = null; $('capAuto').textContent = '自動で動かす'; return; }

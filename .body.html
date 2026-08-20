@@ -19,6 +19,25 @@
     <p class="desc">送る側では上の層から下の層へ、<strong>1層ごとにヘッダ（あて名の紙）が付いて</strong>いきます。受け取る側では逆に1枚ずつはがします。</p>
 
     <div class="panel">
+      <div class="grid c2" style="margin-bottom:14px">
+        <div>
+          <label class="fld" for="msgIn">送りたいデータ（自分で書けます）</label>
+          <input type="text" id="msgIn" value="こんにちは" maxlength="40">
+          <div class="btn-row" style="margin-top:8px;flex-wrap:wrap">
+            <button class="btn sm" data-msg="こんにちは">こんにちは</button>
+            <button class="btn sm" data-msg="OK">OK</button>
+            <button class="btn sm" data-msg="明日の集合は8時30分です。よろしくお願いします。">長めの文</button>
+          </div>
+        </div>
+        <div>
+          <div class="metrics">
+            <div class="metric"><div class="k">データ本体</div><div class="v" id="szData">—</div></div>
+            <div class="metric"><div class="k">ヘッダの合計</div><div class="v" id="szHead">—</div></div>
+            <div class="metric"><div class="k">実際に流れる量</div><div class="v" id="szAll">—</div></div>
+          </div>
+          <div class="note" id="szNote" style="margin-top:10px"></div>
+        </div>
+      </div>
       <div class="btn-row" style="margin-bottom:12px">
         <button class="btn primary" id="capNext">次の段階へ ▶</button>
         <button class="btn" id="capAuto">自動で動かす</button>
